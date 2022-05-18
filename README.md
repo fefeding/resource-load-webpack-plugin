@@ -25,7 +25,7 @@ plugins: [
         loadCompleteTemplate: `console.log('load:', type, url, xhr, retryTime)`,
         // 加载前处理逻辑，可以针对加载url初始化
         // 这里的是当加载失败时，去除域名，改为从主站获取，如果不需要请删除这里
-        loadBeforeTemplate: `if(retryTime > 0) url = url.replace(/^(http(s)?:)?\/\/[^\/]+/i, '');`,
+        loadBeforeTemplate: `if(retryTime > 0) url = url.replace(/^(http(s)?:)?\\/\\/[^\\/]+/i, '');`,
         // 失败重试次数，默认2, 最大只能5次，否则采用5
         retryTime: 2,
         // 缓存url的正则, 不配置就不进行local缓存
