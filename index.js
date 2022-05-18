@@ -1,12 +1,40 @@
 const webpack = require("webpack");
 class JTResourceLoad {
-  constructor() {
+  constructor(option = {}) {
+      // 加载资源完成回调
+      option.loadCompleteTemplate = option.loadCompleteTemplate || `console.log('load:', type, url)`;
+      // 缓存url的正则
+      if(typeof option.localCacheRegs === 'undefined') option.localCacheRegs = [];
+      this.option = option;
   }
   apply(compiler) {
         compiler.hooks.compilation.tap("JT_JsonpTemplatePlugin", compilation => {
         const { Template } = webpack;
         const { mainTemplate } = compilation;
         const chunkLoadTimeout = mainTemplate.outputOptions.chunkLoadTimeout;
+        // 是否需要缓存
+        const isLocalCache = Array.isArray(this.option.localCacheRegs) && this.option.localCacheRegs.length;
+        
+        const cacheRegRules = [
+            "var isMatch = false;"
+        ];
+        // 命中规则的才缓存
+        if(isLocalCache) {
+            for(const r of this.option.localCacheRegs) {
+                cacheRegRules.push(`if(${typeof r ==='string'?r:r.toString()}.test(url)) isMatch = true;`);
+            }
+        }
+
+        const cacheFun = [
+            "function jt_LoadResource_cache(url, data) {",
+                    Template.indent([
+                        ...cacheRegRules,
+                        "if(!window.localStorage || !isMatch) return null;",
+                        "if(typeof data === 'undefined') return window.localStorage.getItem(url);",
+                        "else window.localStorage.setItem(url, data);"
+                    ]),
+                "}"
+            ];
 
         // 注入ajax函数，用于资源拉起
         mainTemplate.hooks.localVars.tap(
@@ -14,7 +42,16 @@ class JTResourceLoad {
 			(source, chunk, hash) => {
 				return Template.asString([
                     source,
+                    "function jt_LoadResource_complete(type, url, xhr) {",
+                        Template.indent([
+                            this.option.loadCompleteTemplate
+                        ]),
+                    "}",
+                    
+                    ...(isLocalCache ? cacheFun: []),
+
                     "function jt_LoadResource(url, callback) {",
+                        isLocalCache? "var text = jt_LoadResource_cache(url); if(text) return text;" : "",
                         "var xhr = new XMLHttpRequest();",
                         "xhr.onreadystatechange = function() {",
                             Template.indent([
@@ -23,11 +60,15 @@ class JTResourceLoad {
                                         "clearTimeout(timeoutHandler);",
                                         "if(xhr.status==200) {",
                                             Template.indent([
+                                                // 缓存
+                                                isLocalCache? "jt_LoadResource_cache(url, xhr.responseText);" : "",
                                                 "callback({ type: 'load', url: url, text: xhr.responseText });",
+                                                "jt_LoadResource_complete('success', url, xhr);"
                                             ]),
                                         "}",
                                         "else {",
                                             "callback({ type: 'fail', url: url });",
+                                            "jt_LoadResource_complete('fail', url, xhr);",
                                         "}"
                                     ]),
                                 "}",
@@ -37,7 +78,8 @@ class JTResourceLoad {
                         "xhr.send(null);",
                         "var timeoutHandler = setTimeout(function(){",
                         Template.indent([
-                            "callback({ type: 'timeout', url: url });"
+                            "callback({ type: 'timeout', url: url });",
+                            "jt_LoadResource_complete('timeout', url, xhr);",
                         ]),
                         `}, ${chunkLoadTimeout});`,
                     "}"
