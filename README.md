@@ -5,6 +5,8 @@ webpack4 资源加载改成ajax请求
 webpack中的js加载默认用的是`script`标签， 本插件会把它替换成`ajax`拉取再eval。
 支持失败重载和`localStorage`缓存js
 
+> 因为是ajax请求js, 需要配置跨域头。
+
 # 安装
 ```js
 npm i jmResourceLoad-webpack-plugin --save-dev
