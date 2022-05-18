@@ -36,7 +36,11 @@ class JTResourceLoad {
                         "if(!window.localStorage || !isMatch) return null;",
                         "if(typeof data === 'undefined') return window.localStorage.getItem(url);",
                         "else window.localStorage.setItem(url, data);",
-                        "} catch(e) {console.error(e)}"
+                        "} catch(e) {console.error(e);",
+                            "if(e.name === 'QuotaExceededError') {",
+                                "window.localStorage.clear && window.localStorage.clear();",
+                            "}",
+                        "}"
                     ]),
                 "}"
             ];
