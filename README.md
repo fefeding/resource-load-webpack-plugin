@@ -24,10 +24,11 @@ plugins: [
         // 失败重试次数，默认2, 最大只能5次，否则采用5
         retryTime: 2,
         // 缓存url的正则, 不配置就不进行local缓存
-        localCacheRegs: [
-            /js\/chunk-common/i,
-            /js\/index/i,                        
-        ]
+        // 请保证唯一性，key会当作缓存的key，比如下面示例的 chunk-common
+        localCacheRegs: {
+            "chunk-common": /js\/chunk-common/i,
+            "index.js": /js\/index/i,   
+        }
     }),
 ]
 ```

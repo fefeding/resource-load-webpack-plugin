@@ -19,12 +19,14 @@ class JTResourceLoad {
         const isLocalCache = Array.isArray(this.option.localCacheRegs) && this.option.localCacheRegs.length;
         
         const cacheRegRules = [
-            "var isMatch = false;"
+            "var isMatch = false; var cacheName='jt_resource_cache_' + url;"
         ];
         // 命中规则的才缓存
         if(isLocalCache) {
-            for(const r of this.option.localCacheRegs) {
-                cacheRegRules.push(`if(${typeof r ==='string'?r:r.toString()}.test(url)) isMatch = true;`);
+            for(const k in this.option.localCacheRegs) {
+                const r = this.option.localCacheRegs[k];
+                if(!r) continue;
+                cacheRegRules.push(`if(${typeof r ==='string'?r:r.toString()}.test(url)) {isMatch = true; cacheName='jt_resource_cache_${k}';}`);
             }
         }
 
@@ -34,8 +36,12 @@ class JTResourceLoad {
                         "try {",
                         ...cacheRegRules,
                         "if(!window.localStorage || !isMatch) return null;",
-                        "if(typeof data === 'undefined') return window.localStorage.getItem(url);",
-                        "else window.localStorage.setItem(url, data);",
+                        "if(typeof data === 'undefined') {",
+                            "var text = window.localStorage.getItem(url);",
+                            // 当缓存中的url是当前url才表示命中，否则为不同版本，不能采用
+                            "if(text && text.indexOf('//' + url) === 0) return text;",
+                        "}",
+                        "else window.localStorage.setItem(url, '//' + url + '\n' + data);",
                         "} catch(e) {console.error(e);",
                             "if(e.name === 'QuotaExceededError') {",
                                 "window.localStorage.clear && window.localStorage.clear();",
