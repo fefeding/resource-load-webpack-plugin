@@ -2,7 +2,10 @@ const webpack = require("webpack");
 class JTResourceLoad {
   constructor(option = {}) {
       // 加载资源完成回调
-      option.loadCompleteTemplate = option.loadCompleteTemplate || `console.log('load:', type, url)`;
+      option.loadCompleteTemplate = option.loadCompleteTemplate || `console.log('load:', type, url, retryTime)`;
+      // 失败重试次数
+      if(typeof option.retryTime === 'undefined') option.retryTime = 2;
+      option.retryTime = Math.min(option.retryTime, 5);
       // 缓存url的正则
       if(typeof option.localCacheRegs === 'undefined') option.localCacheRegs = [];
       this.option = option;
@@ -28,10 +31,12 @@ class JTResourceLoad {
         const cacheFun = [
             "function jt_LoadResource_cache(url, data) {",
                     Template.indent([
+                        "try {",
                         ...cacheRegRules,
                         "if(!window.localStorage || !isMatch) return null;",
                         "if(typeof data === 'undefined') return window.localStorage.getItem(url);",
-                        "else window.localStorage.setItem(url, data);"
+                        "else window.localStorage.setItem(url, data);",
+                        "} catch(e) {console.error(e)}"
                     ]),
                 "}"
             ];
@@ -42,7 +47,7 @@ class JTResourceLoad {
 			(source, chunk, hash) => {
 				return Template.asString([
                     source,
-                    "function jt_LoadResource_complete(type, url, xhr) {",
+                    "function jt_LoadResource_complete(type, url, xhr, retryTime) {",
                         Template.indent([
                             this.option.loadCompleteTemplate
                         ]),
@@ -50,8 +55,9 @@ class JTResourceLoad {
                     
                     ...(isLocalCache ? cacheFun: []),
 
-                    "function jt_LoadResource(url, callback) {",
+                    "function jt_LoadResource(url, callback, retryTime) {",
                         isLocalCache? "var text = jt_LoadResource_cache(url); if(text) return text;" : "",
+                        "retryTime = typeof retryTime !== 'number'?0: retryTime",
                         "var xhr = new XMLHttpRequest();",
                         "xhr.onreadystatechange = function() {",
                             Template.indent([
@@ -63,12 +69,13 @@ class JTResourceLoad {
                                                 // 缓存
                                                 isLocalCache? "jt_LoadResource_cache(url, xhr.responseText);" : "",
                                                 "callback({ type: 'load', url: url, text: xhr.responseText });",
-                                                "jt_LoadResource_complete('success', url, xhr);"
+                                                "jt_LoadResource_complete('success', url, xhr, retryTime);"
                                             ]),
                                         "}",
                                         "else {",
+                                            `if(retryTime < ${this.option.retryTime}) { jt_LoadResource(url, callback, retryTime+1); return;}`,
                                             "callback({ type: 'fail', url: url });",
-                                            "jt_LoadResource_complete('fail', url, xhr);",
+                                            "jt_LoadResource_complete('fail', url, xhr, retryTime);",
                                         "}"
                                     ]),
                                 "}",
@@ -78,8 +85,9 @@ class JTResourceLoad {
                         "xhr.send(null);",
                         "var timeoutHandler = setTimeout(function(){",
                         Template.indent([
+                            `if(retryTime < ${this.option.retryTime}) { jt_LoadResource(url, callback, retryTime+1); return;}`,
                             "callback({ type: 'timeout', url: url });",
-                            "jt_LoadResource_complete('timeout', url, xhr);",
+                            "jt_LoadResource_complete('timeout', url, xhr, retryTime);",
                         ]),
                         `}, ${chunkLoadTimeout});`,
                     "}"
