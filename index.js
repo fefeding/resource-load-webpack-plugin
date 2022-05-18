@@ -41,7 +41,7 @@ class JTResourceLoad {
                             // 当缓存中的url是当前url才表示命中，否则为不同版本，不能采用
                             "if(text && text.indexOf('//' + url) === 0) return text;",
                         "}",
-                        "else window.localStorage.setItem(url, '//' + url + '\n' + data);",
+                        "else window.localStorage.setItem(url, '//' + url + '\\n' + data);",
                         "} catch(e) {console.error(e);",
                             "if(e.name === 'QuotaExceededError') {",
                                 "window.localStorage.clear && window.localStorage.clear();",
