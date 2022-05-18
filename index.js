@@ -16,7 +16,7 @@ class JTResourceLoad {
         const { mainTemplate } = compilation;
         const chunkLoadTimeout = mainTemplate.outputOptions.chunkLoadTimeout;
         // 是否需要缓存
-        const isLocalCache = Array.isArray(this.option.localCacheRegs) && this.option.localCacheRegs.length;
+        const isLocalCache = !!this.option.localCacheRegs;
         
         const cacheRegRules = [
             "var isMatch = false; var cacheName='jt_resource_cache_' + url;"
