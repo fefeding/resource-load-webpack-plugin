@@ -1,0 +1,19 @@
+{
+  "name": "jmresourceload-webpack-plugin",
+  "version": "1.0.0",
+  "description": "webpack资源加载改成ajax请求",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jiamao/jmResourceLoad-webpack-plugin.git"
+  },
+  "author": "fefeding",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jiamao/jmResourceLoad-webpack-plugin/issues"
+  },
+  "homepage": "https://github.com/jiamao/jmResourceLoad-webpack-plugin#readme"
+}
