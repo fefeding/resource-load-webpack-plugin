@@ -1,6 +1,8 @@
 const webpack = require("webpack");
 class JTResourceLoad {
   constructor(option = {}) {
+      // 加载前处理逻辑，可以针对加载url初始化
+      option.loadBeforeTemplate = option.loadBeforeTemplate || `console.log(' start load:', url, retryTime)`;
       // 加载资源完成回调
       option.loadCompleteTemplate = option.loadCompleteTemplate || `console.log('load:', type, url, retryTime)`;
       // 失败重试次数
@@ -26,7 +28,7 @@ class JTResourceLoad {
             for(const k in this.option.localCacheRegs) {
                 const r = this.option.localCacheRegs[k];
                 if(!r) continue;
-                cacheRegRules.push(`if(${typeof r ==='string'?r:r.toString()}.test(url)) {isMatch = true; cacheName='jt_resource_cache_${k}';}`);
+                cacheRegRules.push(`if(!isMatch && ${typeof r ==='string'?r:r.toString()}.test(url)) {isMatch = true; cacheName='jt_resource_cache_${k}';}`);
             }
         }
 
@@ -68,6 +70,7 @@ class JTResourceLoad {
                     "function jt_LoadResource(url, callback, retryTime) {",
                         isLocalCache? "var text = jt_LoadResource_cache(url); if(text) return text;" : "",
                         "retryTime = typeof retryTime !== 'number'?0: retryTime",
+                        this.option.loadBeforeTemplate,
                         "var xhr = new XMLHttpRequest();",
                         "xhr.onreadystatechange = function() {",
                             Template.indent([
