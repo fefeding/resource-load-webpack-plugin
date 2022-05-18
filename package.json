@@ -1,5 +1,5 @@
 {
-  "name": "jmresourceload-webpack-plugin",
+  "name": "jmResourceLoad-webpack-plugin",
   "version": "1.0.0",
   "description": "webpack资源加载改成ajax请求",
   "main": "index.js",
