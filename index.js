@@ -61,7 +61,9 @@ class JTResourceLoad {
                     source,
                     "function jt_LoadResource_complete(type, url, xhr, retryTime) {",
                         Template.indent([
-                            this.option.loadCompleteTemplate
+                            "try{",
+                            this.option.loadCompleteTemplate,
+                            "}catch(e){console.error(e);}"
                         ]),
                     "}",
                     
@@ -70,7 +72,9 @@ class JTResourceLoad {
                     "function jt_LoadResource(url, callback, retryTime) {",
                         isLocalCache? "var text = jt_LoadResource_cache(url); if(text) return text;" : "",
                         "retryTime = typeof retryTime !== 'number'?0: retryTime",
+                        "try{",
                         this.option.loadBeforeTemplate,
+                        "}catch(e){console.error(e);}",
                         "var xhr = new XMLHttpRequest();",
                         "xhr.onreadystatechange = function() {",
                             Template.indent([
