@@ -16,7 +16,10 @@ class JTResourceLoad {
         compiler.hooks.compilation.tap("JT_JsonpTemplatePlugin", compilation => {
         const { Template } = webpack;
         const { mainTemplate } = compilation;
+        const crossOriginLoading =
+					mainTemplate.outputOptions.crossOriginLoading;
         const chunkLoadTimeout = mainTemplate.outputOptions.chunkLoadTimeout;
+        const jsonpScriptType = mainTemplate.outputOptions.jsonpScriptType;
         // 是否需要缓存
         const isLocalCache = !!this.option.localCacheRegs;
         
@@ -70,11 +73,13 @@ class JTResourceLoad {
                     ...(isLocalCache ? cacheFun: []),
 
                     "function jt_LoadResource(url, callback, retryTime) {",
-                        isLocalCache? "var text = jt_LoadResource_cache(url); if(text) return text;" : "",
+                        isLocalCache? "var text = jt_LoadResource_cache(url); if(text) {callback && callback({ type: 'load', url: url, text: text }); return text;}" : "",
                         "retryTime = typeof retryTime !== 'number'?0: retryTime",
+                        "var loadType = 'script';// ajax || script",
                         "try{",
                         this.option.loadBeforeTemplate,
                         "}catch(e){console.error(e);}",
+                        "if(loadType == 'ajax') {",
                         "var xhr = new XMLHttpRequest();",
                         "xhr.onreadystatechange = function() {",
                             Template.indent([
@@ -100,6 +105,43 @@ class JTResourceLoad {
                         "};",
                         "xhr.open('GET', url, true);",
                         "xhr.send(null);",
+                        "}",
+                        "else {",
+                            "var script = document.createElement('script');",
+                            "var onScriptComplete;",
+                            jsonpScriptType
+                                ? `script.type = ${JSON.stringify(jsonpScriptType)};`
+                                : "",
+                            "script.charset = 'utf-8';",
+                            `script.timeout = ${chunkLoadTimeout / 1000};`,
+                            `if (${mainTemplate.requireFn}.nc) {`,
+                            Template.indent(
+                                `script.setAttribute("nonce", ${mainTemplate.requireFn}.nc);`
+                            ),
+                            "}",
+                            "script.src = url",
+                            crossOriginLoading
+                                ? Template.asString([
+                                        "if (script.src.indexOf(window.location.origin + '/') !== 0) {",
+                                        Template.indent(
+                                            `script.crossOrigin = ${JSON.stringify(crossOriginLoading)};`
+                                        ),
+                                        "}"
+                                ])
+                                : "",
+                            "script.onerror = function(e){",
+                                "clearTimeout(timeoutHandler);",
+                                `if(retryTime < ${this.option.retryTime}) { jt_LoadResource(url, callback, retryTime+1); return;}`,
+                                "callback({ type: 'fail', url: url });",
+                                "jt_LoadResource_complete('fail', url, this, retryTime);",
+                            "}",
+                            "script.onload = function(e){",
+                                "clearTimeout(timeoutHandler);",
+                                "callback({ type: 'load', url: url });",
+                                "jt_LoadResource_complete('success', url, this, retryTime);",
+                            "}",
+                            "document.head.appendChild(script);",
+                        "}",
                         "var timeoutHandler = setTimeout(function(){",
                         Template.indent([
                             `if(retryTime < ${this.option.retryTime}) { jt_LoadResource(url, callback, retryTime+1); return;}`,

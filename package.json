@@ -1,6 +1,6 @@
 {
   "name": "resource-load-webpack-plugin",
-  "version": "1.0.11",
+  "version": "1.0.12",
   "description": "webpack资源加载改成ajax请求",
   "main": "index.js",
   "scripts": {
