@@ -146,7 +146,7 @@ class JTResourceLoad {
                         Template.indent([
                             `if(retryTime < ${this.option.retryTime}) { jt_LoadResource(url, callback, retryTime+1); return;}`,
                             "callback({ type: 'timeout', url: url, retryTime: retryTime });",
-                            "jt_LoadResource_complete('timeout', url, xhr, retryTime);",
+                            "jt_LoadResource_complete('timeout', url, xhr||script, retryTime);",
                         ]),
                         `}, ${chunkLoadTimeout});`,
                     "}"
