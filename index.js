@@ -73,8 +73,8 @@ class JTResourceLoad {
                     ...(isLocalCache ? cacheFun: []),
 
                     "function jt_LoadResource(url, callback, retryTime) {",
-                        isLocalCache? "var text = jt_LoadResource_cache(url); if(text) {callback && callback({ type: 'load', url: url, text: text }); return text;}" : "",
                         "retryTime = typeof retryTime !== 'number'?0: retryTime",
+                        isLocalCache? "var text = jt_LoadResource_cache(url); if(text) {callback && callback({ type: 'load', url: url, retryTime: retryTime, text: text }); return text;}" : "",
                         "var loadType = 'script';// ajax || script",
                         "try{",
                         this.option.loadBeforeTemplate,
@@ -90,13 +90,13 @@ class JTResourceLoad {
                                             Template.indent([
                                                 // 缓存
                                                 isLocalCache? "jt_LoadResource_cache(url, xhr.responseText);" : "",
-                                                "callback({ type: 'load', url: url, text: xhr.responseText });",
+                                                "callback({ type: 'load', url: url, retryTime: retryTime, text: xhr.responseText });",
                                                 "jt_LoadResource_complete('success', url, xhr, retryTime);"
                                             ]),
                                         "}",
                                         "else {",
                                             `if(retryTime < ${this.option.retryTime}) { jt_LoadResource(url, callback, retryTime+1); return;}`,
-                                            "callback({ type: 'fail', url: url });",
+                                            "callback({ type: 'fail', url: url, retryTime: retryTime });",
                                             "jt_LoadResource_complete('fail', url, xhr, retryTime);",
                                         "}"
                                     ]),
@@ -132,12 +132,12 @@ class JTResourceLoad {
                             "script.onerror = function(e){",
                                 "clearTimeout(timeoutHandler);",
                                 `if(retryTime < ${this.option.retryTime}) { jt_LoadResource(url, callback, retryTime+1); return;}`,
-                                "callback({ type: 'fail', url: url });",
+                                "callback({ type: 'fail', url: url, retryTime: retryTime });",
                                 "jt_LoadResource_complete('fail', url, this, retryTime);",
                             "}",
                             "script.onload = function(e){",
                                 "clearTimeout(timeoutHandler);",
-                                "callback({ type: 'load', url: url });",
+                                "callback({ type: 'load', url: url, retryTime: retryTime });",
                                 "jt_LoadResource_complete('success', url, this, retryTime);",
                             "}",
                             "document.head.appendChild(script);",
@@ -145,7 +145,7 @@ class JTResourceLoad {
                         "var timeoutHandler = setTimeout(function(){",
                         Template.indent([
                             `if(retryTime < ${this.option.retryTime}) { jt_LoadResource(url, callback, retryTime+1); return;}`,
-                            "callback({ type: 'timeout', url: url });",
+                            "callback({ type: 'timeout', url: url, retryTime: retryTime });",
                             "jt_LoadResource_complete('timeout', url, xhr, retryTime);",
                         ]),
                         `}, ${chunkLoadTimeout});`,
