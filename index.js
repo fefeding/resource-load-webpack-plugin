@@ -74,7 +74,7 @@ class JTResourceLoad {
 
                     "function jt_LoadResource(url, callback, retryTime) {",
                         "retryTime = typeof retryTime !== 'number'?0: retryTime",
-                        isLocalCache? "var text = jt_LoadResource_cache(url); if(text) {callback && callback({ type: 'load', url: url, retryTime: retryTime, text: text }); return text;}" : "",
+                        isLocalCache? "if(retryTime == 0) {var text = jt_LoadResource_cache(url); if(text) {callback && callback({ type: 'load', url: url, retryTime: retryTime, text: text }); return text;}}" : "",
                         "var loadType = 'script';// ajax || script",
                         "try{",
                         this.option.loadBeforeTemplate,
@@ -89,7 +89,7 @@ class JTResourceLoad {
                                         "if(xhr.status==200) {",
                                             Template.indent([
                                                 // 缓存
-                                                isLocalCache? "jt_LoadResource_cache(url, xhr.responseText);" : "",
+                                                isLocalCache? "if(retryTime == 0) jt_LoadResource_cache(url, xhr.responseText);" : "",
                                                 "callback({ type: 'load', url: url, retryTime: retryTime, text: xhr.responseText });",
                                                 "jt_LoadResource_complete('success', url, xhr, retryTime);"
                                             ]),
