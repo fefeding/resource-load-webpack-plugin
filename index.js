@@ -131,6 +131,7 @@ class JTResourceLoad {
                                 : "",
                             "script.onerror = function(e){",
                                 "clearTimeout(timeoutHandler);",
+                                "e.stopPropagation && e.stopPropagation();",
                                 `if(retryTime < ${this.option.retryTime}) { jt_LoadResource(url, callback, retryTime+1); return;}`,
                                 "callback({ type: 'fail', url: url, retryTime: retryTime });",
                                 "jt_LoadResource_complete('fail', url, this, retryTime);",
