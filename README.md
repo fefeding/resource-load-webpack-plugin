@@ -20,7 +20,7 @@ const jmResourceLoadPlugin = require('resource-load-webpack-plugin');
 plugins: [
    new jmResourceLoadPlugin({
         // 加载完成回调，可以注入一段js，用户加载完成的一个自定义逻辑，比较上报日志等，非必须
-        // type: 'success' | 'fail' | 'timeout',   url: 资源地址, xhr： 加载资源的ajax对象       
+        // type: 'success' | 'fail' | 'timeout',   url: 资源地址, xhr： 加载资源的ajax对象或script标签       
         // retryTime 如果指定了重试参数，这里表示当前是第几次重试，正常加载是0，后面累加
         loadCompleteTemplate: `console.log('load:', type, url, xhr, retryTime)`,
         // 加载前处理逻辑，可以针对加载url初始化
