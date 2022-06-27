@@ -155,11 +155,14 @@ class JTResourceLoad {
                         ]),
                         `}, ${chunkLoadTimeout});`,
                     "}",
-                    `function ${inlineJavascriptFun}(js, url, tag){`,
-                        "var script = document.createElement('script');",
-                        "script.innerHTML=js;",
-                        "url && script.setAttribute('data-src', url);",
-                        "if(tag && tag.replaceWith) tag.replaceWith(script); else document.body.appendChild(script);",
+                    `function ${inlineJavascriptFun}(js, url, tag){`,                        
+                        "if(tag && tag.replaceWith) tag.replaceWith(script);",
+                        "else {",
+                            "var script = document.createElement('script');",
+                            "script.innerHTML=js;",
+                            "url && script.setAttribute('data-src', url);",
+                            "document.body.appendChild(script);",
+                        "}",
                     "}",
                     `function ${getJavascriptTagFun}(url){`,
                         "var tags = document.getElementsByTagName('script');if(!tags) return null;",
@@ -302,8 +305,8 @@ class JTResourceLoad {
                                     Template.indent([
                                         "if(data.type === 'load' && data.text) {",
                                                 Template.indent([
-                                                    `var tag = ${getJavascriptTagFun}('${url}');`,
-                                                    `${inlineJavascriptFun}(data.text, '${url}', tag);`
+                                                    //`var tag = ${getJavascriptTagFun}('${url}');`,
+                                                    `${inlineJavascriptFun}(data.text, '${url}');`
                                                 ]),
                                             "}",
                                         ]),
