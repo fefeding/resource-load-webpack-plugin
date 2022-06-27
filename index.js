@@ -81,7 +81,7 @@ class JTResourceLoad {
                     `function ${loadResourceFun}(url, callback, retryTime, loadType) {`,
                         "retryTime = typeof retryTime !== 'number'?0: retryTime",
                         isLocalCache? `if(retryTime == 0) {var text = ${loadResourceCacheFun}(url); if(text) {callback && callback({ type: 'load', url: url, retryTime: retryTime, text: text }); return text;}}` : "",
-                        "loadType = loadType || 'script';// ajax || script",
+                        "loadType = loadType || 'ajax';// ajax || script",
                         "try{",
                         this.option.loadBeforeTemplate,
                         "}catch(e){console.error(e);}",

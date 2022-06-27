@@ -25,7 +25,7 @@ plugins: [
         loadCompleteTemplate: `console.log('load:', type, url, xhr, retryTime)`,
         // 加载前处理逻辑，可以针对加载url初始化
         // 这里的是当加载失败时，去除域名，改为从主站获取，如果不需要请删除这里
-         // loadType: 'ajax' | 'script' 支持ajax和script加载，可以根据条件修改这个变量
+         // loadType: 'ajax' | 'script' 支持ajax和script加载，可以根据条件修改这个变量 默认 ajax
          // url  当前加载的地址
         loadBeforeTemplate: `
                             if(retryTime > 0) url = url.replace(/^(http(s)?:)?\\/\\/[^\\/]+/i, '');
