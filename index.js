@@ -165,7 +165,6 @@ class JTResourceLoad {
                         "var script = document.createElement(tag==='css'?'style':'script');",
                         "script.innerHTML=ct;",
                         "url && script.setAttribute('data-src', url);",
-                        "if(tag === 'css') script.setAttribute('data-href', url);",
                         "if(tag === 'css') document.head.appendChild(script);",
                         "else document.body.appendChild(script);",
                     "}",
@@ -344,14 +343,14 @@ class JTResourceLoad {
                                                 'for(var i = 0; i < existingLinkTags.length; i++) {', 
                                                     Template.indent([
                                                         'var tag = existingLinkTags[i];', 
-                                                        'var dataHref = tag.getAttribute("data-href") || tag.getAttribute("href");', 
+                                                        'var dataHref = tag.getAttribute("data-src") || tag.getAttribute("data-href") || tag.getAttribute("href");', 
                                                         'if(tag.rel === "stylesheet" && (dataHref === href || dataHref === fullhref)) return resolve();'
                                                     ]), 
                                                 '}', 
                                                 'var existingStyleTags = document.getElementsByTagName("style");', 'for(var i = 0; i < existingStyleTags.length; i++) {', 
                                                     Template.indent([
                                                         'var tag = existingStyleTags[i];', 
-                                                        'var dataHref = tag.getAttribute("data-href");', 
+                                                        'var dataHref = tag.getAttribute("data-src") || tag.getAttribute("data-href");', 
                                                         'if(dataHref === href || dataHref === fullhref) return resolve();'
                                                     ]), 
                                                 '}', 
