@@ -41,8 +41,9 @@ plugins: [
         // 可以在正式环境才缓存，开发环境请不要配置，不然不好调试
         localCacheRegs: process.env.NODE_ENV === 'production'?
         {
-            "chunk-common": /js\/chunk-common/i,
+            "chunk-common.js": /js\/chunk-common/i,
             "index.js": /js\/index/i,   
+            "chunk-common.css": /css\/chunk-common/i,
         }: null
     }),
 ]
