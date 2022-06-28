@@ -1,11 +1,16 @@
 const webpack = require("webpack");
 
+const { Template } = webpack;
+
 const pluginName = 'JT_JsonpTemplatePlugin';
 const loadResourceFun = `${pluginName}_LoadResource`;
 const loadResourceCacheFun = `${pluginName}_LoadResource_cache`;
 const loadResourceCompleteFun = `${pluginName}_LoadResource_complete`;
 const inlineJavascriptFun = `${pluginName}_InlineScript`;
 const getJavascriptTagFun = `${pluginName}_GetScriptTagByUrl`;
+const oldCreateElementFun = `${pluginName}_CreateElement`;
+
+const CSS_MODULE_TYPE = 'css/mini-extract';
 
 class JTResourceLoad {
   constructor(option = {}) {
@@ -22,7 +27,6 @@ class JTResourceLoad {
   }
   apply(compiler) {
         compiler.hooks.compilation.tap(pluginName, compilation => {
-            const { Template } = webpack;
             const { mainTemplate } = compilation;
 
             const alterAssetTagGroups = compilation.hooks.htmlWebpackPluginAlterAssetTags;
@@ -31,8 +35,7 @@ class JTResourceLoad {
             const chunkLoadTimeout = mainTemplate.outputOptions.chunkLoadTimeout;
             const jsonpScriptType = mainTemplate.outputOptions.jsonpScriptType;
             // 是否需要缓存
-            const isLocalCache = !!this.option.localCacheRegs;
-
+            const isLocalCache = !!this.option.localCacheRegs;            
 
             const cacheRegRules = [
                 "var isMatch = false; var cacheName='jt_resource_cache_' + url;"
@@ -78,8 +81,9 @@ class JTResourceLoad {
                     
                     ...(isLocalCache ? cacheFun: []),
 
-                    `function ${loadResourceFun}(url, callback, retryTime, loadType) {`,
+                    `function ${loadResourceFun}(url, callback, retryTime, loadType, sourceType, nc) {`,
                         "retryTime = typeof retryTime !== 'number'?0: retryTime",
+                        "sourceType=sourceType||'js';",
                         isLocalCache? `if(retryTime == 0) {var text = ${loadResourceCacheFun}(url); if(text) {callback && callback({ type: 'load', url: url, retryTime: retryTime, text: text }); return text;}}` : "",
                         "loadType = loadType || 'ajax';// ajax || script",
                         "try{",
@@ -101,7 +105,7 @@ class JTResourceLoad {
                                             ]),
                                         "}",
                                         "else {",
-                                            `if(retryTime < ${this.option.retryTime}) { ${loadResourceFun}(url, callback, retryTime+1); return;}`,
+                                            `if(retryTime < ${this.option.retryTime}) { ${loadResourceFun}(url, callback, retryTime+1, loadType, sourceType, nc); return;}`,
                                             "callback({ type: 'fail', url: url, retryTime: retryTime });",
                                             `${loadResourceCompleteFun}('fail', url, xhr, retryTime);`,
                                         "}"
@@ -113,59 +117,60 @@ class JTResourceLoad {
                         "xhr.send(null);",
                         "}",
                         "else {",
-                            "var script = document.createElement('script');",
+                            "var el = document.createElement(sourceType==='css'?'link':'script');",
                             jsonpScriptType
-                                ? `script.type = ${JSON.stringify(jsonpScriptType)};`
+                                ? `el.type = ${JSON.stringify(jsonpScriptType)};`
                                 : "",
-                            "script.charset = 'utf-8';",
-                            `script.timeout = ${chunkLoadTimeout / 1000};`,
-                            `if (${mainTemplate.requireFn}.nc) {`,
+                            "if(sourceType === 'js') el.charset = 'utf-8';",
+                            "if(sourceType === 'css') el.rel = 'stylesheet';",
+                            "if(sourceType === 'css') el.type = 'text/css';",
+                            `el.timeout = ${chunkLoadTimeout / 1000};`,
+                            `if (nc) {`,
                             Template.indent(
-                                `script.setAttribute("nonce", ${mainTemplate.requireFn}.nc);`
+                                `el.setAttribute("nonce", nc);`
                             ),
                             "}",
-                            "script.src = url",
+                            "el.src = el.href = url",
                             crossOriginLoading
                                 ? Template.asString([
-                                        "if (script.src.indexOf(window.location.origin + '/') !== 0) {",
+                                        "if (el.src.indexOf(window.location.origin + '/') !== 0) {",
                                         Template.indent(
-                                            `script.crossOrigin = ${JSON.stringify(crossOriginLoading)};`
+                                            `el.crossOrigin = ${JSON.stringify(crossOriginLoading)};`
                                         ),
                                         "}"
                                 ])
                                 : "",
-                            "script.onerror = function(e){",
+                            "el.onerror = function(e){",
                                 "clearTimeout(timeoutHandler);",
-                                `if(retryTime < ${this.option.retryTime}) { ${loadResourceFun}(url, callback, retryTime+1); e.stopPropagation && e.stopPropagation(); return;}`,
+                                `if(retryTime < ${this.option.retryTime}) { ${loadResourceFun}(url, callback, retryTime+1, loadType, sourceType, nc); e.stopPropagation && e.stopPropagation(); return;}`,
                                 "callback({ type: 'fail', url: url, retryTime: retryTime });",
                                 `${loadResourceCompleteFun}('fail', url, this, retryTime);`,
                             "}",
-                            "script.onload = function(e){",
+                            "el.onload = function(e){",
                                 "clearTimeout(timeoutHandler);",
                                 "callback({ type: 'load', url: url, retryTime: retryTime });",
                                 `${loadResourceCompleteFun}('success', url, this, retryTime);`,
                             "}",
-                            "document.head.appendChild(script);",
+                            "document.head.appendChild(el);",
                         "}",
                         "var timeoutHandler = setTimeout(function(){",
                         Template.indent([
-                            `if(retryTime < ${this.option.retryTime}) { ${loadResourceFun}(url, callback, retryTime+1); return;}`,
+                            `if(retryTime < ${this.option.retryTime}) { ${loadResourceFun}(url, callback, retryTime+1, loadType, sourceType, nc); return;}`,
                             "callback({ type: 'timeout', url: url, retryTime: retryTime });",
-                            `${loadResourceCompleteFun}('timeout', url, xhr||script, retryTime);`,
+                            `${loadResourceCompleteFun}('timeout', url, xhr||el, retryTime);`,
                         ]),
                         `}, ${chunkLoadTimeout});`,
                     "}",
-                    `function ${inlineJavascriptFun}(js, url, tag){`,                        
-                        "if(tag && tag.replaceWith) tag.replaceWith(script);",
-                        "else {",
-                            "var script = document.createElement('script');",
-                            "script.innerHTML=js;",
-                            "url && script.setAttribute('data-src', url);",
-                            "document.body.appendChild(script);",
-                        "}",
+                    `function ${inlineJavascriptFun}(ct, url, tag){`, 
+                        "var script = document.createElement(tag==='css'?'style':'script');",
+                        "script.innerHTML=ct;",
+                        "url && script.setAttribute('data-src', url);",
+                        "if(tag === 'css') script.setAttribute('data-href', url);",
+                        "if(tag === 'css') document.head.appendChild(script);",
+                        "else document.body.appendChild(script);",
                     "}",
-                    `function ${getJavascriptTagFun}(url){`,
-                        "var tags = document.getElementsByTagName('script');if(!tags) return null;",
+                    `function ${getJavascriptTagFun}(url, tagName){`,
+                        "var tags = document.getElementsByTagName(tagName||'script');if(!tags) return null;",
                         "for(var i=0;i<tags.length;i++){",
                             `var tag=tags[i];
                             if(tag && tag.attributes) { 
@@ -232,7 +237,7 @@ class JTResourceLoad {
                                         "}",
                                         "onScriptComplete(data);"
                                     ]),
-                                "})",                            
+                                `}, 0, 'ajax', 'js', ${mainTemplate.requireFn}.nc)`,                            
                             ]);
                         }
                     }
@@ -240,6 +245,7 @@ class JTResourceLoad {
             }
             // 覆盖掉加载入口
             if(mainTemplate.hooks.requireEnsure && mainTemplate.hooks.requireEnsure.taps) {
+                
                 for(const tap of mainTemplate.hooks.requireEnsure.taps) {
                     if(tap.name === 'JsonpMainTemplatePlugin load') {
                         tap.fn = (source, chunk, hash) => {
@@ -275,6 +281,111 @@ class JTResourceLoad {
                             ]);
                         }
                     }
+                    // css加载函数
+                    else if(tap.name === 'mini-css-extract-plugin') {
+                        tap.fn = (source, chunk, hash) => {
+                            
+                            console.log('start mini css extract');
+
+                            const chunkMap = this.getCssChunkObject(chunk);
+                            
+                            if (Object.keys(chunkMap).length > 0) {
+                                const chunkMaps = chunk.getChunkMaps();
+                                const linkHrefPath = mainTemplate.getAssetPath(JSON.stringify(`css/[name].[contenthash:8].css`), {
+                                    hash: `" + ${mainTemplate.renderCurrentHashCode(hash)} + "`,
+                                    hashWithLength: length => `" + ${mainTemplate.renderCurrentHashCode(hash, length)} + "`,
+                                    chunk: {
+                                    id: '" + chunkId + "',
+                                    hash: `" + ${JSON.stringify(chunkMaps.hash)}[chunkId] + "`,
+
+                                    hashWithLength(length) {
+                                        const shortChunkHashMap = Object.create(null);
+
+                                        for (const chunkId of Object.keys(chunkMaps.hash)) {
+                                        if (typeof chunkMaps.hash[chunkId] === 'string') {
+                                            shortChunkHashMap[chunkId] = chunkMaps.hash[chunkId].substring(0, length);
+                                        }
+                                        }
+
+                                        return `" + ${JSON.stringify(shortChunkHashMap)}[chunkId] + "`;
+                                    },
+
+                                    contentHash: {
+                                        [CSS_MODULE_TYPE]: `" + ${JSON.stringify(chunkMaps.contentHash[CSS_MODULE_TYPE])}[chunkId] + "`
+                                    },
+                                    contentHashWithLength: {
+                                        [CSS_MODULE_TYPE]: length => {
+                                        const shortContentHashMap = {};
+                                        const contentHash = chunkMaps.contentHash[CSS_MODULE_TYPE];
+
+                                        for (const chunkId of Object.keys(contentHash)) {
+                                            if (typeof contentHash[chunkId] === 'string') {
+                                            shortContentHashMap[chunkId] = contentHash[chunkId].substring(0, length);
+                                            }
+                                        }
+
+                                        return `" + ${JSON.stringify(shortContentHashMap)}[chunkId] + "`;
+                                        }
+                                    },
+                                    name: `" + (${JSON.stringify(chunkMaps.name)}[chunkId]||chunkId) + "`
+                                    },
+                                    contentHashType: CSS_MODULE_TYPE
+                                });
+                                return Template.asString([source, '', 
+                                    `console.log('${pluginName} CSS loading');`, 
+                                    `var cssChunks = ${JSON.stringify(chunkMap)};`, 
+                                    'if(installedCssChunks[chunkId]) promises.push(installedCssChunks[chunkId]);', 
+                                    'else if(installedCssChunks[chunkId] !== 0 && cssChunks[chunkId]) {', 
+                                        Template.indent(['promises.push(installedCssChunks[chunkId] = new Promise(function(resolve, reject) {', 
+                                            Template.indent([
+                                                `var href = ${linkHrefPath};`, 
+                                                `var fullhref = ${mainTemplate.requireFn}.p + href;`, 
+                                                'var existingLinkTags = document.getElementsByTagName("link");', 
+                                                'for(var i = 0; i < existingLinkTags.length; i++) {', 
+                                                    Template.indent([
+                                                        'var tag = existingLinkTags[i];', 
+                                                        'var dataHref = tag.getAttribute("data-href") || tag.getAttribute("href");', 
+                                                        'if(tag.rel === "stylesheet" && (dataHref === href || dataHref === fullhref)) return resolve();'
+                                                    ]), 
+                                                '}', 
+                                                'var existingStyleTags = document.getElementsByTagName("style");', 'for(var i = 0; i < existingStyleTags.length; i++) {', 
+                                                    Template.indent([
+                                                        'var tag = existingStyleTags[i];', 
+                                                        'var dataHref = tag.getAttribute("data-href");', 
+                                                        'if(dataHref === href || dataHref === fullhref) return resolve();'
+                                                    ]), 
+                                                '}', 
+                                                `${loadResourceFun}(fullhref, function(data) {`,
+                                                    Template.indent([
+                                                        "if(data.type === 'load' && data.text) {",
+                                                            Template.indent([
+                                                                `${inlineJavascriptFun}(data.text, fullhref, 'css');`,
+                                                            ]),
+                                                        "}",
+                                                        "if(data.type === 'load') resolve(data);",
+                                                        "else {",
+                                                            Template.indent([
+                                                                'var err = new Error("Loading CSS chunk " + chunkId + " failed.\\n(" + data.url + ")");', 
+                                                                'err.code = "CSS_CHUNK_LOAD_FAILED";', 
+                                                                'err.request = data.url;', 
+                                                                'delete installedCssChunks[chunkId]', 
+                                                                'reject(err);'
+                                                            ]), 
+                                                        "}",
+                                                    ]),
+                                                `}, 0, 'ajax', 'css');`,
+                                            ]), 
+                                            '}).then(function() {', 
+                                                Template.indent(['installedCssChunks[chunkId] = 0;']), 
+                                            '}));'
+                                        ]), 
+                                    '}'
+                                ]);
+                            }                
+
+                            return source;
+                        }
+                    }
                 }
             }
 
@@ -291,6 +402,12 @@ class JTResourceLoad {
                         closeTag: true,
                         innerHTML: loadResourceScript
                     });
+                    // 注入一段加载CSS的脚本
+                    /*head.push({
+                        tagName: 'script',
+                        closeTag: true,
+                        innerHTML: loadResourceScript
+                    });*/
                     // 同步加载的js加载方式
                     if(this.option.syncLoadType === 'ajax') {
                         const tags = [
@@ -316,12 +433,32 @@ class JTResourceLoad {
                             delete tag.attributes.src;
                         }
                     }
-                    if (callback) {
+                    if(callback) {
                         callback(null, pluginArgs);
-                      }
+                    }
                 });
             }
         });
+  }
+
+  getCssChunkObject(mainChunk) {
+    const obj = {};
+    const chunks = mainChunk.getAllAsyncChunks();
+    for (const chunk of chunks) {
+        
+      for (const module of chunk.modulesIterable) {
+        //console.log(chunk.id, module.type);
+        if (module.type === CSS_MODULE_TYPE) {
+            //console.log(chunk);
+            obj[chunk.id] = 1;
+            break;
+        }
+        else {
+            break;
+        }
+      }
+    }
+    return obj;
   }
 }
 module.exports = JTResourceLoad;
