@@ -281,7 +281,7 @@ class JTResourceLoad {
                         }
                     }
                     // css加载函数
-                    else if(tap.name === 'mini-css-extract-plugin') {
+                    else if(tap.name === 'mini-css-extract-plugin' && this.option.cssLoad) {
                         tap.fn = (source, chunk, hash) => {
                             
                             console.log('start mini css extract');
@@ -331,14 +331,14 @@ class JTResourceLoad {
                                     contentHashType: CSS_MODULE_TYPE
                                 });
                                 return Template.asString([source, '', 
-                                    `console.log('${pluginName} CSS loading');`, 
                                     `var cssChunks = ${JSON.stringify(chunkMap)};`, 
                                     'if(installedCssChunks[chunkId]) promises.push(installedCssChunks[chunkId]);', 
                                     'else if(installedCssChunks[chunkId] !== 0 && cssChunks[chunkId]) {', 
                                         Template.indent(['promises.push(installedCssChunks[chunkId] = new Promise(function(resolve, reject) {', 
                                             Template.indent([
                                                 `var href = ${linkHrefPath};`, 
-                                                `var fullhref = ${mainTemplate.requireFn}.p + href;`, 
+                                                `var fullhref = ${mainTemplate.requireFn}.p + href;`,                                                 
+                                                `console.log('${pluginName} load ', fullhref);`, 
                                                 'var existingLinkTags = document.getElementsByTagName("link");', 
                                                 'for(var i = 0; i < existingLinkTags.length; i++) {', 
                                                     Template.indent([
@@ -347,7 +347,8 @@ class JTResourceLoad {
                                                         'if(tag.rel === "stylesheet" && (dataHref === href || dataHref === fullhref)) return resolve();'
                                                     ]), 
                                                 '}', 
-                                                'var existingStyleTags = document.getElementsByTagName("style");', 'for(var i = 0; i < existingStyleTags.length; i++) {', 
+                                                'var existingStyleTags = document.getElementsByTagName("style");', 
+                                                'for(var i = 0; i < existingStyleTags.length; i++) {', 
                                                     Template.indent([
                                                         'var tag = existingStyleTags[i];', 
                                                         'var dataHref = tag.getAttribute("data-src") || tag.getAttribute("data-href");', 
