@@ -231,7 +231,7 @@ class JTResourceLoad {
                                     Template.indent([
                                         "if(data.type === 'load' && data.text) {",
                                             Template.indent([
-                                                "eval(data.text);",
+                                                `${this.option.syncRunType==='script'?inlineJavascriptFun:'eval'}(data.text, data.url);`,
                                             ]),
                                         "}",
                                         "onScriptComplete(data);"
