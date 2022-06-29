@@ -96,7 +96,7 @@ class JTResourceLoad {
                                 "if(xhr.readyState==4) {",
                                     Template.indent([
                                         "clearTimeout(timeoutHandler);",
-                                        "if(xhr.status==200) {",
+                                        "if(xhr.status==200 && xhr.responseText) {",
                                             Template.indent([
                                                 // 缓存
                                                 isLocalCache? `if(retryTime == 0) ${loadResourceCacheFun}(url, xhr.responseText);` : "",
