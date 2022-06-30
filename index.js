@@ -437,7 +437,8 @@ class JTResourceLoad {
                             /*tag.innerHTML = Template.asString([
                                 `${loadResourceFun}('${url}', function(data){}, 0, 'tag');`,
                             ]);*/
-                            tag.attributes['onerror'] = `${loadResourceFun}('${url}', function(data){}, 0, 'tag')`;
+                            tag.attributes['onerror'] = `${loadResourceFun}('${url}', function(data){}, 1, 'tag')`;                            
+                            tag.attributes['onload'] = `${loadResourceCompleteFun}('success', this.src, this, 0)`;
                         }
                     }
                     if(callback) {
