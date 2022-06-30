@@ -35,10 +35,6 @@ plugins: [
         retryTime: 2,
         // 是否用于加载CSS
         cssLoad: false,
-        // 同步加载出js是否采用ajax，默认是生成script标签
-        // 主要用来处理默认的几个chunk ['vue-common-vendor', 'index', 'chunk-vendors']
-        syncLoadType: 'ajax',
-        syncRunType: 'script', // 同步脚本执行方式 script || eval
         // 缓存url的正则, 不配置就不进行local缓存
         // 请保证唯一性，key会当作缓存的key，比如下面示例的 chunk-common
         // 可以在正式环境才缓存，开发环境请不要配置，不然不好调试

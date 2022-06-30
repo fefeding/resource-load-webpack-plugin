@@ -4,6 +4,7 @@ const { Template } = webpack;
 
 const pluginName = 'JT_JsonpTemplatePlugin';
 const loadResourceFun = `${pluginName}_LoadResource`;
+const loadResourceCacheKey = `${pluginName}_LoadResourceCacheKey`;
 const loadResourceCacheFun = `${pluginName}_LoadResource_cache`;
 const loadResourceCompleteFun = `${pluginName}_LoadResource_complete`;
 const inlineJavascriptFun = `${pluginName}_InlineScript`;
@@ -38,14 +39,14 @@ class JTResourceLoad {
             const isLocalCache = !!this.option.localCacheRegs;            
 
             const cacheRegRules = [
-                "var isMatch = false; var cacheName='jt_resource_cache_' + url;"
+                `var isMatch = false; var cacheName='${loadResourceCacheKey}_' + url;`
             ];
             // 命中规则的才缓存
             if(isLocalCache) {
                 for(const k in this.option.localCacheRegs) {
                     const r = this.option.localCacheRegs[k];
                     if(!r) continue;
-                    cacheRegRules.push(`if(!isMatch && ${typeof r ==='string'?r:r.toString()}.test(url)) {isMatch = true; cacheName='jt_resource_cache_${k}';}`);
+                    cacheRegRules.push(`if(!isMatch && ${typeof r ==='string'?r:r.toString()}.test(url)) {isMatch = true; cacheName='${loadResourceCacheKey}_${k}';}`);
                 }
             }
 
@@ -81,14 +82,15 @@ class JTResourceLoad {
                     
                     ...(isLocalCache ? cacheFun: []),
 
-                    `function ${loadResourceFun}(url, callback, retryTime, loadType, sourceType, nc) {`,
+                    `function ${loadResourceFun}(url, callback, retryTime, ltype, sourceType, nc) {`,
                         "retryTime = typeof retryTime !== 'number'?0: retryTime",
                         "sourceType=sourceType||'js';",
                         isLocalCache? `if(retryTime == 0) {var text = ${loadResourceCacheFun}(url); if(text) {callback && callback({ type: 'load', url: url, retryTime: retryTime, text: text }); return text;}}` : "",
-                        "loadType = loadType || 'ajax';// ajax || script",
+                        "var loadType = ltype || 'ajax';// ajax || tag",
                         "try{",
-                        this.option.loadBeforeTemplate,
+                            this.option.loadBeforeTemplate,
                         "}catch(e){console.error(e);}",
+                        "if(ltype) loadType = ltype;",
                         "if(loadType == 'ajax') {",
                         "var xhr = new XMLHttpRequest();",
                         "xhr.onreadystatechange = function() {",
@@ -105,7 +107,7 @@ class JTResourceLoad {
                                             ]),
                                         "}",
                                         "else {",
-                                            `if(retryTime < ${this.option.retryTime}) { ${loadResourceFun}(url, callback, retryTime+1, loadType, sourceType, nc); return;}`,
+                                            `if(retryTime < ${this.option.retryTime}) { ${loadResourceFun}(url, callback, retryTime+1, ltype, sourceType, nc); return;}`,
                                             "callback({ type: 'fail', url: url, retryTime: retryTime });",
                                             `${loadResourceCompleteFun}('fail', url, xhr, retryTime);`,
                                         "}"
@@ -142,7 +144,7 @@ class JTResourceLoad {
                                 : "",
                             "el.onerror = function(e){",
                                 "clearTimeout(timeoutHandler);",
-                                `if(retryTime < ${this.option.retryTime}) { ${loadResourceFun}(url, callback, retryTime+1, loadType, sourceType, nc); e.stopPropagation && e.stopPropagation(); return;}`,
+                                `if(retryTime < ${this.option.retryTime}) { ${loadResourceFun}(url, callback, retryTime+1, ltype, sourceType, nc); e.stopPropagation && e.stopPropagation(); return;}`,
                                 "callback({ type: 'fail', url: url, retryTime: retryTime });",
                                 `${loadResourceCompleteFun}('fail', url, this, retryTime);`,
                             "}",
@@ -155,7 +157,7 @@ class JTResourceLoad {
                         "}",
                         "var timeoutHandler = setTimeout(function(){",
                         Template.indent([
-                            `if(retryTime < ${this.option.retryTime}) { ${loadResourceFun}(url, callback, retryTime+1, loadType, sourceType, nc); return;}`,
+                            `if(retryTime < ${this.option.retryTime}) { ${loadResourceFun}(url, callback, retryTime+1, ltype, sourceType, nc); return;}`,
                             "callback({ type: 'timeout', url: url, retryTime: retryTime });",
                             `${loadResourceCompleteFun}('timeout', url, xhr||el, retryTime);`,
                         ]),
@@ -165,8 +167,10 @@ class JTResourceLoad {
                         "var script = document.createElement(tag==='css'?'style':'script');",
                         "script.innerHTML=ct;",
                         "url && script.setAttribute('data-src', url);",
-                        "if(tag === 'css') document.head.appendChild(script);",
-                        "else document.body.appendChild(script);",
+                        "document.head.appendChild(script);",
+                        // 如果script也加到head，出现vue跳转变慢的问题
+                        //"if(tag === 'css') document.head.appendChild(script);",
+                        //"else document.body.appendChild(script);",
                     "}",
                     `function ${getJavascriptTagFun}(url, tagName){`,
                         "var tags = document.getElementsByTagName(tagName||'script');if(!tags) return null;",
@@ -231,12 +235,13 @@ class JTResourceLoad {
                                     Template.indent([
                                         "if(data.type === 'load' && data.text) {",
                                             Template.indent([
+                                                //`eval(data.text);`,
                                                 `${this.option.syncRunType==='script'?inlineJavascriptFun:'eval'}(data.text, data.url);`,
                                             ]),
                                         "}",
                                         "onScriptComplete(data);"
                                     ]),
-                                `}, 0, 'ajax', 'js', ${mainTemplate.requireFn}.nc)`,                            
+                                `}, 0, '', 'js', ${mainTemplate.requireFn}.nc)`,                            
                             ]);
                         }
                     }
@@ -284,7 +289,7 @@ class JTResourceLoad {
                     else if(tap.name === 'mini-css-extract-plugin' && this.option.cssLoad) {
                         tap.fn = (source, chunk, hash) => {
                             
-                            console.log('start mini css extract');
+                            //console.log('start mini css extract');
 
                             const chunkMap = this.getCssChunkObject(chunk);
                             
@@ -397,26 +402,21 @@ class JTResourceLoad {
                     const head = pluginArgs[headTagName] || (pluginArgs[headTagName]=[]);
                     const body = pluginArgs[bodyTagName] || (pluginArgs[bodyTagName]=[]);
                     // 注入一段加载脚本
-                    head.push({
+                    head.unshift({
                         tagName: 'script',
                         closeTag: true,
                         innerHTML: loadResourceScript
                     });
-                    // 注入一段加载CSS的脚本
-                    /*head.push({
-                        tagName: 'script',
-                        closeTag: true,
-                        innerHTML: loadResourceScript
-                    });*/
-                    // 同步加载的js加载方式
-                    if(this.option.syncLoadType === 'ajax') {
-                        const tags = [
-                            ...head,
-                            ...body
-                        ];
-                        for(const tag of tags) {
-                            if(!tag || tag.tagName !== 'script' || !tag.attributes || !tag.attributes.src) continue;
-                            const url = tag.attributes.src;
+                    
+                    const tags = [
+                        ...head,
+                        ...body
+                    ];
+                    for(const tag of tags) {
+                        if(!tag || tag.tagName !== 'script' || !tag.attributes || !tag.attributes.src) continue;
+                        const url = tag.attributes.src;
+                        // 同步加载的js加载方式
+                        if(this.option.syncLoadType === 'ajax') {
                             tag.innerHTML = Template.asString([
                                 `${loadResourceFun}('${url}', function(data){`,
                                     Template.indent([
@@ -428,10 +428,16 @@ class JTResourceLoad {
                                                 ]),
                                             "}",
                                         ]),
-                                "}, 0, 'ajax');"
-                            ]);
+                                "}, 0, '');"
+                            ]);                            
                             tag.attributes['data-src'] = url;
                             delete tag.attributes.src;
+                        }
+                        else {
+                            /*tag.innerHTML = Template.asString([
+                                `${loadResourceFun}('${url}', function(data){}, 0, 'tag');`,
+                            ]);*/
+                            tag.attributes['onerror'] = `${loadResourceFun}('${url}', function(data){}, 0, 'tag')`;
                         }
                     }
                     if(callback) {
@@ -452,9 +458,6 @@ class JTResourceLoad {
         if (module.type === CSS_MODULE_TYPE) {
             //console.log(chunk);
             obj[chunk.id] = 1;
-            break;
-        }
-        else {
             break;
         }
       }
