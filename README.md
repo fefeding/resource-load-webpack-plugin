@@ -25,16 +25,18 @@ plugins: [
         loadCompleteTemplate: `console.log('load:', type, url, xhr, retryTime)`,
         // 加载前处理逻辑，可以针对加载url初始化
         // 这里的是当加载失败时，去除域名，改为从主站获取，如果不需要请删除这里
-         // loadType: 'ajax' | 'script' 支持ajax和script加载，可以根据条件修改这个变量 默认 ajax
+         // loadType: 'ajax' | 'tag' 支持ajax和script加载，可以根据条件修改这个变量 默认 ajax
          // url  当前加载的地址
         loadBeforeTemplate: `
                             if(retryTime > 0) url = url.replace(/^(http(s)?:)?\\/\\/[^\\/]+/i, '');
-                            loadType='ajax';
+                            loadType = '${process.env.NODE_ENV === 'production'?'ajax':'tag'}';
                         `,
         // 失败重试次数，默认2, 最大只能5次，否则采用5
         retryTime: 2,
         // 是否用于加载CSS
         cssLoad: false,
+        // 脚本解析方式，开发环境下用标签tag来解析比较好调试
+        syncRunType: process.env.NODE_ENV === 'production'?'eval':'tag',
         // 缓存url的正则, 不配置就不进行local缓存
         // 请保证唯一性，key会当作缓存的key，比如下面示例的 chunk-common
         // 可以在正式环境才缓存，开发环境请不要配置，不然不好调试
