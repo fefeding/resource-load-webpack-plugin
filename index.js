@@ -179,7 +179,7 @@ class JTResourceLoad {
                         Template.indent([
                             "var script = document.createElement(tag==='css'?'style':'script');",
                             "script.innerHTML=ct;",
-                            "script.type='text/javascript';",
+                            "script.type=tag==='css'?'text/css':'text/javascript';",
                             "url && script.setAttribute('data-src', url);",
                             "document.head.appendChild(script);"
                         ]),
