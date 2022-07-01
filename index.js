@@ -75,7 +75,7 @@ class JTResourceLoad {
                     `function ${loadResourceCompleteFun}(type, url, xhr, retryTime) {`,
                         Template.indent([
                             "try{",
-                            this.option.loadCompleteTemplate,
+                                Template.indent([this.option.loadCompleteTemplate]),
                             "}catch(e){console.error(e);}"
                         ]),
                     "}",
@@ -83,108 +83,124 @@ class JTResourceLoad {
                     ...(isLocalCache ? cacheFun: []),
 
                     `function ${loadResourceFun}(url, callback, retryTime, ltype, sourceType, nc) {`,
-                        "retryTime = typeof retryTime !== 'number'?0: retryTime",
-                        "sourceType=sourceType||'js';",
-                        isLocalCache? `if(retryTime == 0) {var text = ${loadResourceCacheFun}(url); if(text) {callback && callback({ type: 'load', url: url, retryTime: retryTime, text: text }); return text;}}` : "",
-                        "var loadType = ltype || 'ajax';// ajax || tag",
-                        "try{",
-                            this.option.loadBeforeTemplate,
-                        "}catch(e){console.error(e);}",
-                        "if(ltype) loadType = ltype;",
-                        "if(loadType == 'ajax') {",
-                        "var xhr = new XMLHttpRequest();",
-                        "xhr.onreadystatechange = function() {",
-                            Template.indent([
-                                "if(xhr.readyState==4) {",
-                                    Template.indent([
-                                        "clearTimeout(timeoutHandler);",
-                                        "if(xhr.status==200 && xhr.responseText) {",
-                                            Template.indent([
-                                                // 缓存
-                                                isLocalCache? `if(retryTime == 0) ${loadResourceCacheFun}(url, xhr.responseText);` : "",
-                                                "callback({ type: 'load', url: url, retryTime: retryTime, text: xhr.responseText });",
-                                                `${loadResourceCompleteFun}('success', url, xhr, retryTime);`
-                                            ]),
-                                        "}",
-                                        "else {",
-                                            `if(retryTime < ${this.option.retryTime}) { ${loadResourceFun}(url, callback, retryTime+1, ltype, sourceType, nc); return;}`,
-                                            "callback({ type: 'fail', url: url, retryTime: retryTime });",
-                                            `${loadResourceCompleteFun}('fail', url, xhr, retryTime);`,
-                                        "}"
-                                    ]),
-                                "}",
-                            ]),
-                        "};",
-                        "xhr.open('GET', url, true);",
-                        "xhr.send(null);",
-                        "}",
-                        "else {",
-                            "var el = document.createElement(sourceType==='css'?'link':'script');",
-                            jsonpScriptType
-                                ? `el.type = ${JSON.stringify(jsonpScriptType)};`
-                                : "",
-                            "if(sourceType === 'js') el.charset = 'utf-8';",
-                            "if(sourceType === 'css') el.rel = 'stylesheet';",
-                            "if(sourceType === 'css') el.type = 'text/css';",
-                            `el.timeout = ${chunkLoadTimeout / 1000};`,
-                            `if (nc) {`,
-                            Template.indent(
-                                `el.setAttribute("nonce", nc);`
-                            ),
-                            "}",
-                            "el.src = el.href = url",
-                            crossOriginLoading
-                                ? Template.asString([
-                                        "if (el.src.indexOf(window.location.origin + '/') !== 0) {",
-                                        Template.indent(
-                                            `el.crossOrigin = ${JSON.stringify(crossOriginLoading)};`
-                                        ),
-                                        "}"
-                                ])
-                                : "",
-                            "el.onerror = function(e){",
-                                "clearTimeout(timeoutHandler);",
-                                `if(retryTime < ${this.option.retryTime}) { ${loadResourceFun}(url, callback, retryTime+1, ltype, sourceType, nc); e.stopPropagation && e.stopPropagation(); return;}`,
-                                "callback({ type: 'fail', url: url, retryTime: retryTime });",
-                                `${loadResourceCompleteFun}('fail', url, this, retryTime);`,
-                            "}",
-                            "el.onload = function(e){",
-                                "clearTimeout(timeoutHandler);",
-                                "callback({ type: 'load', url: url, retryTime: retryTime });",
-                                `${loadResourceCompleteFun}('success', url, this, retryTime);`,
-                            "}",
-                            "document.head.appendChild(el);",
-                        "}",
-                        "var timeoutHandler = setTimeout(function(){",
                         Template.indent([
-                            `if(retryTime < ${this.option.retryTime}) { ${loadResourceFun}(url, callback, retryTime+1, ltype, sourceType, nc); return;}`,
-                            "callback({ type: 'timeout', url: url, retryTime: retryTime });",
-                            `${loadResourceCompleteFun}('timeout', url, xhr||el, retryTime);`,
+                            "retryTime = typeof retryTime !== 'number'?0: retryTime",
+                            "sourceType=sourceType||'js';",
+                            isLocalCache? `if(retryTime == 0) {var text = ${loadResourceCacheFun}(url); if(text) {callback && callback({ type: 'load', url: url, retryTime: retryTime, text: text }); return text;}}` : "",
+                            "var loadType = ltype || 'ajax';// ajax || tag",
+                            "try{",
+                                Template.indent([
+                                    this.option.loadBeforeTemplate
+                                ]),
+                            "}catch(e){console.error(e);}",
+                            "if(ltype) loadType = ltype;",
+                            "if(loadType == 'ajax') {",
+                                Template.indent([
+                                    "var xhr = new XMLHttpRequest();",
+                                    "xhr.onreadystatechange = function() {",
+                                        Template.indent([
+                                            "if(xhr.readyState==4) {",
+                                                Template.indent([
+                                                    "clearTimeout(timeoutHandler);",
+                                                    "if(xhr.status==200 && xhr.responseText) {",
+                                                        Template.indent([
+                                                            // 缓存
+                                                            isLocalCache? `if(retryTime == 0) ${loadResourceCacheFun}(url, xhr.responseText);` : "",
+                                                            "callback({ type: 'load', url: url, retryTime: retryTime, text: xhr.responseText });",
+                                                            `${loadResourceCompleteFun}('success', url, xhr, retryTime);`
+                                                        ]),
+                                                    "}",
+                                                    "else {",
+                                                        `if(retryTime < ${this.option.retryTime}) { ${loadResourceFun}(url, callback, retryTime+1, ltype, sourceType, nc); return;}`,
+                                                        "callback({ type: 'fail', url: url, retryTime: retryTime });",
+                                                        `${loadResourceCompleteFun}('fail', url, xhr, retryTime);`,
+                                                    "}"
+                                                ]),
+                                            "}",
+                                        ]),
+                                    "};",
+                                    "xhr.open('GET', url, true);",
+                                    "xhr.send(null);"
+                                ]),
+                            "}",
+                            "else {",
+                                Template.indent([
+                                    "var el = document.createElement(sourceType==='css'?'link':'script');",
+                                    jsonpScriptType
+                                        ? `el.type = ${JSON.stringify(jsonpScriptType)};`
+                                        : "",
+                                    "if(sourceType === 'js') el.charset = 'utf-8';",
+                                    "if(sourceType === 'css') el.rel = 'stylesheet';",
+                                    "el.type = sourceType === 'css'?'text/css':'text/javascript';",
+                                    `el.timeout = ${chunkLoadTimeout / 1000};`,
+                                    `if (nc) {`,
+                                    Template.indent(
+                                        `el.setAttribute("nonce", nc);`
+                                    ),
+                                    "}",
+                                    "el.src = el.href = url",
+                                    crossOriginLoading
+                                        ? Template.asString([
+                                                "if (el.src.indexOf(window.location.origin + '/') !== 0) {",
+                                                Template.indent(
+                                                    `el.crossOrigin = ${JSON.stringify(crossOriginLoading)};`
+                                                ),
+                                                "}"
+                                        ])
+                                        : "",
+                                    "el.onerror = function(e){",
+                                        Template.indent([
+                                            "clearTimeout(timeoutHandler);",
+                                            `if(retryTime < ${this.option.retryTime}) { ${loadResourceFun}(url, callback, retryTime+1, ltype, sourceType, nc); e.stopPropagation && e.stopPropagation(); return;}`,
+                                            "callback({ type: 'fail', url: url, retryTime: retryTime });",
+                                            `${loadResourceCompleteFun}('fail', url, this, retryTime);`
+                                        ]),
+                                    "}",
+                                    "el.onload = function(e){",
+                                        Template.indent([
+                                            "clearTimeout(timeoutHandler);",
+                                            "callback({ type: 'load', url: url, retryTime: retryTime });",
+                                            `${loadResourceCompleteFun}('success', url, this, retryTime);`
+                                        ]),
+                                    "}",
+                                    "document.head.appendChild(el);"
+                                ]),
+                            "}",
+                            "var timeoutHandler = setTimeout(function(){",
+                                Template.indent([
+                                    `if(retryTime < ${this.option.retryTime}) { ${loadResourceFun}(url, callback, retryTime+1, ltype, sourceType, nc); return;}`,
+                                    "callback({ type: 'timeout', url: url, retryTime: retryTime });",
+                                    `${loadResourceCompleteFun}('timeout', url, xhr||el, retryTime);`,
+                                ]),
+                            `}, ${chunkLoadTimeout});`
                         ]),
-                        `}, ${chunkLoadTimeout});`,
                     "}",
                     `function ${inlineJavascriptFun}(ct, url, tag){`, 
-                        "var script = document.createElement(tag==='css'?'style':'script');",
-                        "script.innerHTML=ct;",
-                        "url && script.setAttribute('data-src', url);",
-                        "document.head.appendChild(script);",
-                        // 如果script也加到head，出现vue跳转变慢的问题
-                        //"if(tag === 'css') document.head.appendChild(script);",
-                        //"else document.body.appendChild(script);",
+                        Template.indent([
+                            "var script = document.createElement(tag==='css'?'style':'script');",
+                            "script.innerHTML=ct;",
+                            "script.type='text/javascript';",
+                            "url && script.setAttribute('data-src', url);",
+                            "document.head.appendChild(script);"
+                        ]),
                     "}",
                     `function ${getJavascriptTagFun}(url, tagName){`,
-                        "var tags = document.getElementsByTagName(tagName||'script');if(!tags) return null;",
-                        "for(var i=0;i<tags.length;i++){",
-                            `var tag=tags[i];
-                            if(tag && tag.attributes) { 
-                                for(var j=0;j<tag.attributes.length;j++){ 
-                                    var attr = tag.attributes[j];
-                                    if((attr.name==='src'||attr.name==='data-src') && attr.value===url){
-                                        return tag;
-                                    }
-                                }
-                            }`,
-                        "}",
+                        Template.indent([
+                            "var tags = document.getElementsByTagName(tagName||'script');if(!tags) return null;",
+                            "for(var i=0;i<tags.length;i++){",
+                                Template.indent([
+                                    "var tag=tags[i];",
+                                    "if(tag && tag.attributes) {",
+                                        Template.indent([
+                                            "for(var j=0;j<tag.attributes.length;j++){",
+                                                "var attr = tag.attributes[j];",
+                                                "if((attr.name==='src'||attr.name==='data-src') && attr.value===url) return tag;",
+                                            "}"
+                                        ]),
+                                    "}"
+                                ]),
+                            "}"
+                        ]),
                     "}",
                 ]);
 
@@ -404,6 +420,7 @@ class JTResourceLoad {
                     // 注入一段加载脚本
                     head.unshift({
                         tagName: 'script',
+                        type: 'text/javascript',
                         closeTag: true,
                         innerHTML: loadResourceScript
                     });
@@ -422,8 +439,6 @@ class JTResourceLoad {
                                     Template.indent([
                                         "if(data.type === 'load' && data.text) {",
                                                 Template.indent([
-                                                    //`var tag = ${getJavascriptTagFun}('${url}');`,
-                                                    //`${inlineJavascriptFun}(data.text, '${url}');`
                                                     `${this.option.syncRunType==='script'?inlineJavascriptFun:'eval'}(data.text, '${url}');`
                                                 ]),
                                             "}",
@@ -434,9 +449,7 @@ class JTResourceLoad {
                             delete tag.attributes.src;
                         }
                         else {
-                            /*tag.innerHTML = Template.asString([
-                                `${loadResourceFun}('${url}', function(data){}, 0, 'tag');`,
-                            ]);*/
+                            tag.attributes['async'] = true; 
                             tag.attributes['onerror'] = `${loadResourceFun}('${url}', function(data){}, 1, 'tag')`;                            
                             tag.attributes['onload'] = `${loadResourceCompleteFun}('success', this.src, this, 0)`;
                         }
