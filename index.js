@@ -396,7 +396,7 @@ class JTResourceLoad {
                                                             ]), 
                                                         "}",
                                                     ]),
-                                                `}, 0, 'ajax', 'css');`,
+                                                `}, 0, 'tag', 'css');`,
                                             ]), 
                                             '}).then(function() {', 
                                                 Template.indent(['installedCssChunks[chunkId] = 0;']), 
