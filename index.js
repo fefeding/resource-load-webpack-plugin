@@ -211,7 +211,7 @@ class JTResourceLoad {
                    return Template.asString([
                     source,
                     // 注入一段脚本，表示index.js加载完成
-                    "window.webpackInstalledChunks = typeof installedChunks !== 'undefined'?installedChunks:{};",
+                    "if(typeof window !== 'undefined') window.webpackInstalledChunks = typeof installedChunks !== 'undefined'?installedChunks:{};",
                     alterAssetTagGroups?"":loadResourceScript
                    ]);
                 }
