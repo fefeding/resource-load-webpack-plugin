@@ -1,10 +1,11 @@
 {
   "name": "resource-load-webpack-plugin",
-  "version": "1.0.40",
+  "version": "1.0.41",
   "description": "webpack资源加载改成ajax请求",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "pkg": "npm publish --registry=https://registry.npmjs.org/"
   },
   "repository": {
     "type": "git",
