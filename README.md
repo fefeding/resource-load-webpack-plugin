@@ -5,7 +5,7 @@ webpack4 资源加载改成ajax请求
 webpack中的js加载默认用的是`script`标签， 本插件会把它替换成`ajax`拉取再eval。
 支持失败重载和`localStorage`缓存js
 
-> 因为是ajax请求js, 需要配置跨域头: Access-Control-Allow-Origin。
+> 因为是ajax请求js, 如果用跨域资源，需要配置跨域头: Access-Control-Allow-Origin。
 
 # 安装
 ```js
@@ -34,7 +34,7 @@ plugins: [
         // 失败重试次数，默认2, 最大只能5次，否则采用5
         retryTime: 2,
         // 是否用于加载CSS
-        cssLoad: false,
+        cssLoad: true,
         // 脚本解析方式，开发环境下用标签tag来解析比较好调试
         syncRunType: process.env.NODE_ENV === 'production'?'eval':'tag',
         // 缓存url的正则, 不配置就不进行local缓存
@@ -43,7 +43,6 @@ plugins: [
         localCacheRegs: process.env.NODE_ENV === 'production'?
         {
             "chunk-common.js": /js\/chunk-common/i,
-            "index.js": /js\/index/i,   
             "chunk-common.css": /css\/chunk-common/i,
         }: null
     }),
