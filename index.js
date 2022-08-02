@@ -72,6 +72,7 @@ class JTResourceLoad {
                 ];
             // 加载JS逻辑
             const loadResourceScript = Template.asString([
+                    this.option.globalScript?`try{ ${this.option.globalScript} }catch(e){console.error(e);}`:'',
                     `function ${loadResourceCompleteFun}(type, url, xhr, retryTime) {`,
                         Template.indent([
                             "try{",
