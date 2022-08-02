@@ -442,7 +442,7 @@ class JTResourceLoad {
                                     Template.indent([
                                         "if(data.type === 'load' && data.text) {",
                                                 Template.indent([
-                                                    `${this.option.syncRunType==='script'?inlineJavascriptFun:'eval'}(data.text, '${url}');`
+                                                    `${this.option.syncRunType==='script'||this.option.syncRunType==='tag'?inlineJavascriptFun:'eval'}(data.text, '${url}');`
                                                 ]),
                                             "}",
                                         ]),
