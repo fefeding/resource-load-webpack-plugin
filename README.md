@@ -38,7 +38,7 @@ plugins: [
         // 是否用于加载CSS
         cssLoad: true,
         // 脚本解析方式，开发环境下用标签tag来解析比较好调试
-        syncRunType: process.env.NODE_ENV === 'production'?'eval':'tag',
+        syncRunType: process.env.NODE_ENV === 'production'?'ajax':'tag',
         // 缓存url的正则, 不配置就不进行local缓存
         // 请保证唯一性，key会当作缓存的key，比如下面示例的 chunk-common
         // 可以在正式环境才缓存，开发环境请不要配置，不然不好调试
