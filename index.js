@@ -452,7 +452,7 @@ class JTResourceLoad {
                             delete tag.attributes.src;
                         }
                         else {
-                            tag.attributes['async'] = true; 
+                            if(this.option.syncLoadAsync) tag.attributes['async'] = true; 
                             tag.attributes['onerror'] = `${loadResourceFun}(this.src, function(data){}, 1, 'tag')`;                            
                             tag.attributes['onload'] = `${loadResourceCompleteFun}('success', this.src, this, 0)`;
                         }
