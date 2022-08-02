@@ -85,7 +85,7 @@ class JTResourceLoad {
 
                     `function ${loadResourceFun}(url, callback, retryTime, ltype, sourceType, nc) {`,
                         Template.indent([
-                            "retryTime = typeof retryTime !== 'number'?0: retryTime",
+                            "retryTime = typeof retryTime !== 'number'?0: retryTime;",
                             "sourceType=sourceType||'js';",
                             isLocalCache? `if(retryTime == 0) {var text = ${loadResourceCacheFun}(url); if(text) {callback && callback({ type: 'load', url: url, retryTime: retryTime, text: text }); return text;}}` : "",
                             "var loadType = ltype || 'ajax';// ajax || tag",
