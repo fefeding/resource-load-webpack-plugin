@@ -1,4 +1,4 @@
-# jmResourceLoad-webpack-plugin
+# resource-load-webpack-plugin
 webpack4 资源加载改成ajax请求
 
 
