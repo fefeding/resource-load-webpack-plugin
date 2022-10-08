@@ -19,7 +19,7 @@ const jmResourceLoadPlugin = require('resource-load-webpack-plugin');
 
 plugins: [
    new jmResourceLoadPlugin({
-        // 在页面加入全局代码 
+        // 在页面加入全局代码 ， 比如要在index.html中加入一段全局处理逻辑或定义变量
         globalScript: `console.log('resource-load-webpack-plugin');`,
         // 加载完成回调，可以注入一段js，用户加载完成的一个自定义逻辑，比较上报日志等，非必须
         // type: 'success' | 'fail' | 'timeout',   url: 资源地址, xhr： 加载资源的ajax对象或script标签       
@@ -38,8 +38,8 @@ plugins: [
         // 是否用于加载CSS
         cssLoad: true,
         // 脚本解析方式，开发环境下用标签tag来解析比较好调试
-        syncRunType: process.env.NODE_ENV === 'production'?'ajax':'tag',
-        // 缓存url的正则, 不配置就不进行local缓存
+        syncRunType: process.env.NODE_ENV === 'production'?'eval':'tag',
+        // 缓存url的正则, 不配置就不进行local缓存, 建议只缓存核心变化少的资源
         // 请保证唯一性，key会当作缓存的key，比如下面示例的 chunk-common
         // 可以在正式环境才缓存，开发环境请不要配置，不然不好调试
         localCacheRegs: process.env.NODE_ENV === 'production'?
