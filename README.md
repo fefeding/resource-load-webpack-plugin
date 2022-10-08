@@ -51,3 +51,5 @@ plugins: [
 ]
 ```
 
+配置示例：[example](./example.md)
+
