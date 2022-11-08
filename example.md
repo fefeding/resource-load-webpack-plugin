@@ -14,6 +14,7 @@ new jmResourceLoadPlugin({
     // 加载完成回调，可以注入一段js，用户加载完成的一个自定义逻辑，比较上报日志等，非必须
     // type: 'success' | 'fail' | 'timeout',   url: 资源地址, xhr： 加载资源的ajax对象
     // retryTime 如果指定了重试参数，这里表示当前是第几次重试，正常加载是0，后面累加
+    // 这里非必须，插件内已有重试逻辑，这里只需要上报日志处理，=
     loadCompleteTemplate: `if(retryTime > 0 || type !== 'success' || window.is_debug) {
                                 window.__jtLogger && window.__jtLogger({
                                     'eventid': 'resource-loader',
