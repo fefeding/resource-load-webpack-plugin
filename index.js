@@ -427,6 +427,24 @@ class JTResourceLoad {
                         closeTag: true,
                         innerHTML: loadResourceScript
                     });
+
+                    // 如果有外加script
+                    if(this.option.addScript) {
+                        let addCode = this.option.addScript || '';
+                        if(typeof addCode === 'function') {
+                            addCode = addCode({
+                                loadResourceFun
+                            }) || '';
+                        }
+                        if(addCode) {
+                            head.push({
+                                tagName: 'script',
+                                type: 'text/javascript',
+                                closeTag: true,
+                                innerHTML: addCode
+                            });
+                        }
+                    }
                     
                     const tags = [
                         ...head,

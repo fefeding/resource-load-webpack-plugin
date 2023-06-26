@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta
+            content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover"
+            name="viewport"
+        />
+        <meta name="color-scheme" content="only light" />
+        <meta content="yes" name="apple-mobile-web-app-capable" />
+        <meta content="black" name="apple-mobile-web-app-status-bar-style" />
+        <meta content="telephone=no" name="format-detection" />
+        <meta content="email=no" name="format-detection" />
+        <meta name="x5-orientation" content="portrait" />
+        <meta name="x5-cache" content="disable" />
+
+
+        <% if(htmlWebpackPlugin.options.addScript){ %> <%= htmlWebpackPlugin.options.addScript() %> <%}%>
+
+        
+    </head>
+
+    <body>
+        <noscript>
+            <strong
+                >We're sorry but <%= htmlWebpackPlugin.options.title %> doesn't work properly without JavaScript
+                enabled. Please enable it to continue.</strong
+            >
+        </noscript>
+        <div id="app" class="bg"></div>
+        <!-- built files will be auto injected -->
+    </body>
+</html>
