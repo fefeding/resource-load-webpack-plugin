@@ -450,29 +450,38 @@ class JTResourceLoad {
                         ...head,
                         ...body
                     ];
+                    
                     for(const tag of tags) {
-                        if(!tag || tag.tagName !== 'script' || !tag.attributes || !tag.attributes.src) continue;
-                        const url = tag.attributes.src;
-                        // 同步加载的js加载方式
-                        if(this.option.syncLoadType === 'ajax') {
-                            tag.innerHTML = Template.asString([
-                                `${loadResourceFun}('${url}', function(data){`,
-                                    Template.indent([
-                                        "if(data.type === 'load' && data.text) {",
-                                                Template.indent([
-                                                    `${this.option.syncRunType==='script'||this.option.syncRunType==='tag'?inlineJavascriptFun:'eval'}(data.text, '${url}');`
-                                                ]),
-                                            "}",
-                                        ]),
-                                "}, 0, '');"
-                            ]);                            
-                            tag.attributes['data-src'] = url;
-                            delete tag.attributes.src;
+                        if(!tag || !tag.attributes || (!tag.attributes.src && !tag.attributes.href)) continue;
+                        const url = tag.attributes.src || tag.attributes.href;
+                        // js加载
+                        if(tag.tagName === 'script') {
+                            // 同步加载的js加载方式
+                            if(this.option.syncLoadType === 'ajax') {
+                                tag.innerHTML = Template.asString([
+                                    `${loadResourceFun}('${url}', function(data){`,
+                                        Template.indent([
+                                            "if(data.type === 'load' && data.text) {",
+                                                    Template.indent([
+                                                        `${this.option.syncRunType==='script'||this.option.syncRunType==='tag'?inlineJavascriptFun:'eval'}(data.text, '${url}');`
+                                                    ]),
+                                                "}",
+                                            ]),
+                                    "}, 0, '');"
+                                ]);                            
+                                tag.attributes['data-src'] = url;
+                                delete tag.attributes.src;
+                            }
+                            else {
+                                if(this.option.syncLoadAsync) tag.attributes['async'] = true; 
+                                tag.attributes['onerror'] = `${loadResourceFun}(this.src, function(data){}, 1, 'tag')`;                            
+                                tag.attributes['onload'] = `${loadResourceCompleteFun}('success', this.src, this, 0)`;
+                            }
                         }
-                        else {
-                            if(this.option.syncLoadAsync) tag.attributes['async'] = true; 
-                            tag.attributes['onerror'] = `${loadResourceFun}(this.src, function(data){}, 1, 'tag')`;                            
-                            tag.attributes['onload'] = `${loadResourceCompleteFun}('success', this.src, this, 0)`;
+                        // 同步 css
+                        else if(tag.tagName === 'link' && tag.attributes.rel === 'stylesheet') {
+                            tag.attributes['onerror'] = `${loadResourceFun}(this.href, function(data){}, 1, 'tag', 'css')`;                            
+                            tag.attributes['onload'] = `${loadResourceCompleteFun}('success', this.href, this, 0)`;
                         }
                     }
                     if(callback) {
